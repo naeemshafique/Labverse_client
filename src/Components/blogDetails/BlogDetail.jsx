@@ -14,9 +14,10 @@ const BlogDetail = ({ id }) => {
 
   useEffect(() => {
     const fetchData = async () => {
+      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL;
       setLoading(true); // Ensure loading is true when fetching new data
       try {
-        const response = await fetch(`http://127.0.0.1:8000/api/blogposts/${id}`);
+        const response = await fetch(`${apiUrl}/api/blogposts/${id}`);
         const data = await response.json();
         setBlogPost(data);
         setLoading(false);
@@ -33,14 +34,16 @@ const BlogDetail = ({ id }) => {
     if (blogPost.user) {
       const fetchAuthor = async () => {
         try {
-          const response = await fetch(`http://127.0.0.1:8000/api/authors/${blogPost.user}`);
+          const response = await fetch(
+            `http://127.0.0.1:8000/api/authors/${blogPost.user}`
+          );
           const data = await response.json();
           setAuthor(data);
         } catch (error) {
           console.error("Error fetching Authors:", error);
         }
       };
-      
+
       fetchAuthor();
     }
   }, [blogPost.user]);
@@ -49,43 +52,57 @@ const BlogDetail = ({ id }) => {
     if (blogPost.content) {
       const parser = new DOMParser();
       const doc = parser.parseFromString(blogPost.content, "text/html");
-  
-      const sections = Array.from(doc.querySelectorAll("h2")).map(h2 => {
+
+      const sections = Array.from(doc.querySelectorAll("h2")).map((h2) => {
         const id = h2.id;
         const title = h2.textContent.trim();
         let details = [];
-        let subheadings = [];  // Initialize subheadings for each section
+        let subheadings = []; // Initialize subheadings for each section
         let currentNode = h2.nextElementSibling;
-  
+
         while (currentNode && currentNode.tagName !== "H2") {
           if (currentNode.tagName === "P") {
-            details.push({ id: currentNode.id, text: currentNode.textContent.trim() });
+            details.push({
+              id: currentNode.id,
+              text: currentNode.textContent.trim(),
+            });
           }
-  
+
           if (currentNode.tagName === "H3") {
             const subId = currentNode.id;
             const subTitle = currentNode.textContent.trim();
             let subDetails = [];
             currentNode = currentNode.nextElementSibling;
-  
-            while (currentNode && currentNode.tagName !== "H3" && currentNode.tagName !== "H2") {
+
+            while (
+              currentNode &&
+              currentNode.tagName !== "H3" &&
+              currentNode.tagName !== "H2"
+            ) {
               if (currentNode.tagName === "P") {
-                subDetails.push({ id: currentNode.id, text: currentNode.textContent.trim() });
+                subDetails.push({
+                  id: currentNode.id,
+                  text: currentNode.textContent.trim(),
+                });
               }
               currentNode = currentNode.nextElementSibling;
             }
-  
-            subheadings.push({ id: subId, text: subTitle, details: subDetails });
-            continue;  // Continue to check if there's another H3 or content until H2
+
+            subheadings.push({
+              id: subId,
+              text: subTitle,
+              details: subDetails,
+            });
+            continue; // Continue to check if there's another H3 or content until H2
           }
-  
+
           // Move to the next element if it's not under current H3
           if (currentNode) currentNode = currentNode.nextElementSibling;
         }
-  
+
         return { id, title, details, subheadings };
       });
-  
+
       setParsedContent(sections);
     }
   }, [blogPost.content]);
@@ -119,6 +136,5 @@ const BlogDetail = ({ id }) => {
     </div>
   );
 };
-
 
 export default BlogDetail;
